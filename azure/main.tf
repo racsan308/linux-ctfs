@@ -1,11 +1,11 @@
 # main.tf
 terraform {
   required_version = ">= 1.14.0"
-  
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.55.0"  # Minimum version that supports azurerm_virtual_machine_power action
+      version = ">= 4.55.0" # Minimum version that supports azurerm_virtual_machine_power action
     }
     null = {
       source  = "hashicorp/null"
@@ -22,7 +22,7 @@ variable "az_region" {
 
 variable "subscription_id" {
   description = "Your Azure Subscription ID"
-  type = string
+  type        = string
 }
 
 variable "use_local_setup" {
@@ -64,7 +64,7 @@ resource "azurerm_public_ip" "ctf_public_ip" {
   location            = azurerm_resource_group.ctf_rg.location
   resource_group_name = azurerm_resource_group.ctf_rg.name
   allocation_method   = "Static"
-  sku                = "Standard"
+  sku                 = "Standard"
 }
 
 # Create a network security group
@@ -84,7 +84,7 @@ resource "azurerm_network_security_group" "ctf_nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-    security_rule {
+  security_rule {
     name                       = "HTTP"
     priority                   = 1002
     direction                  = "Inbound"
@@ -146,7 +146,7 @@ resource "azurerm_linux_virtual_machine" "ctf_vm" {
   name                = "ctf-vm"
   resource_group_name = azurerm_resource_group.ctf_rg.name
   location            = azurerm_resource_group.ctf_rg.location
-  size                = "Standard_B1s"
+  size                = "Standard_B2ats_v2"
   admin_username      = "ctf_user"
   network_interface_ids = [
     azurerm_network_interface.ctf_nic.id,
@@ -191,7 +191,7 @@ action "azurerm_virtual_machine_power" "ctf_power_on" {
 
 resource "null_resource" "wait_for_setup" {
   depends_on = [azurerm_linux_virtual_machine.ctf_vm]
-  
+
   provisioner "remote-exec" {
     connection {
       host     = azurerm_linux_virtual_machine.ctf_vm.public_ip_address
@@ -199,7 +199,7 @@ resource "null_resource" "wait_for_setup" {
       password = "CTFpassword123!"
       timeout  = "10m"
     }
-    
+
     inline = [
       "while [ ! -f /var/log/setup_complete ]; do sleep 10; done"
     ]
@@ -208,6 +208,6 @@ resource "null_resource" "wait_for_setup" {
 
 # Output the public IP address
 output "public_ip_address" {
-  value = azurerm_linux_virtual_machine.ctf_vm.public_ip_address
+  value      = azurerm_linux_virtual_machine.ctf_vm.public_ip_address
   depends_on = [null_resource.wait_for_setup]
 }
